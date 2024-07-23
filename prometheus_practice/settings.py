@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import os
 import threading
 from pathlib import Path
 
@@ -127,8 +128,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 PROMETHEUS_METRIC_NAMESPACE = "practice"
 PROMETHEUS_LATENCY_BUCKETS = (
     0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0, 25.0, 50.0, 75.0, float("inf"),)
-PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8000, 8003)
-# PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
+
+# PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8081, 8084)  # range 8081~8083
+PROMETHEUS_METRICS_EXPORT_PORT = 8081
+PROMETHEUS_METRICS_EXPORT_ADDRESS = "0.0.0.0"
 # dashboard uid: "O6v4rMpizda"
 # DRF
 REST_FRAMEWORK = {
