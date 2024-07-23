@@ -1,6 +1,13 @@
 version: '3.8'
 
 services:
+  django_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8000"
+
   prometheus:
     image: prom/prometheus
     restart: 'no'
@@ -9,7 +16,8 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-
+    depends_on:
+      - django_app
 
   grafana:
     image: grafana/grafana
@@ -22,6 +30,7 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+
 
 volumes:
     prometheus_data: {}
