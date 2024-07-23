@@ -3,45 +3,7 @@
   - prometheus_client를 의존하고 있음
   - https://prometheus.github.io/client_python/: 메트릭 관련 라이브러리(prometheus_client)
     - 주요 메트릭 클래스를 가지고있음. 컨택스트 매니저, 데코레이터로 활용 가능
-      ```python
-        # https://prometheus.github.io/client_python/instrumenting/counter/
-        from prometheus_client import Counter
-      
-        c = Counter('my_failures', 'Description of counter')
-        c.inc()     # Increment by 1
-        c.inc(1.6)  # Increment by given value
-        
-        @c.count_exceptions()
-        def f():
-            pass
-      
-        with c.count_exceptions():
-            pass
-      
-        # Count only one type of exception
-        with c.count_exceptions(ValueError):
-            pass
     
-  - CPU, Memory 사용 메트릭 설정
-    ``````python
-    import prometheus_client
-    import psutil
-    from django.conf import settings
-    
-    SYSTEM_USAGE = prometheus_client.Gauge('system_usage',
-                                           'current system resource usage',
-                                           ['resource_type'],
-                                           namespace=settings.PROMETHEUS_METRIC_NAMESPACE)
-    
-    
-    def collect_system_metrics():
-        # mac OS에서는 prometheus_client.process_collector.ProcessCollector()가 활성화되지 않음
-        # (linux의 /proc/stat을 기준으로 실행되기 때문)
-        # mac에서는 직접 데이터를 수집하는 메트릭을 추가해야함
-        SYSTEM_USAGE.labels('CPU').set(psutil.cpu_percent())
-        SYSTEM_USAGE.labels('Memory').set(psutil.virtual_memory()[2])
-
-​		
 
 - 실행 순서(django start)
 
@@ -72,6 +34,8 @@
    - 새로 생성한 Metric 인스턴스는 별도로 등록하지 않아도 prometheus_client.registry.REGISTRY()에 담겨있음
      - 수집하려는 데이터는 호출 시점까지 업데이트 되어있어야함
 
+
+
 ### Trouble shooting
 
 - docker-compose 실행 시 django 컨테이너만 실행되지 않고 `Error: That port is already in use.` 에러
@@ -79,10 +43,52 @@
   => django와 prometheus 실행 포트를 다르게 설정해야함
 
   - django가 실행될 때 prometheus도 지정된 포트로 데몬 서버를 띄움
+
     - django 메인 스레드 실행(socket: 8000) & prometheus의 SetupPrometheusEndpointOnPort 함수 실행(socket: 8000)
+
+      ![image](https://github.com/user-attachments/assets/bc290645-8f8d-46d1-aeaa-57629707149b)
+
     - 개발(mac) 환경에서는 같은 포트로 실행하더라도 다른 타입의 동일한 포트로 프로세스가 실행됨(놓친 부분)
 
 
 
-- 
+- system 자원(cpu, memory 등) 수집 활성화
+
+  => mac에서는 prometheus_client.ProcessCollector를 지원하지 않음
+
+  - prometheus_client.ProcessCollector 실행은 리눅스의 /proc/stat 파일을 읽어서 실행됨
+
+  - 맥에서 시스템 자원을 확인하기 위해 별도의 메트릭 코드를 추가
+
+    ```python
+    # system_reporter.py
+    import prometheus_client
+    import psutil
+    from django.conf import settings
+    
+    SYSTEM_USAGE = prometheus_client.Gauge('system_usage',
+                                           'current system resource usage',
+                                           ['resource_type'],
+                                           namespace=settings.PROMETHEUS_METRIC_NAMESPACE)
+    
+    def collect_system_metrics():
+        SYSTEM_USAGE.labels('CPU').set(psutil.cpu_percent())
+        SYSTEM_USAGE.labels('Memory').set(psutil.virtual_memory()[2])
+        
+        
+    # urls.py
+    from django_prometheus.exports import ExportToDjangoView
+    from system_reporter import collect_system_metrics
+    
+    
+    def ExportToDjangoViewForMac(request):
+        collect_system_metrics()
+        return ExportToDjangoView(request)
+    
+    urlpatterns = [
+        path('prometheus-xyzabc/metrics/for-mac', ExportToDjangoViewForMac, name="prometheus-django-metrics-for-mac"),
+    ]
+    ```
+
+    
 
