@@ -74,8 +74,7 @@
     def collect_system_metrics():
         SYSTEM_USAGE.labels('CPU').set(psutil.cpu_percent())
         SYSTEM_USAGE.labels('Memory').set(psutil.virtual_memory()[2])
-        
-        
+    
     # urls.py
     from django_prometheus.exports import ExportToDjangoView
     from system_reporter import collect_system_metrics
@@ -89,6 +88,40 @@
         path('prometheus-xyzabc/metrics/for-mac', ExportToDjangoViewForMac, name="prometheus-django-metrics-for-mac"),
     ]
     ```
-
+  
+  - Custom Collector를 추가하는 방법
+  
+    ```python
+    # system_collector.py
+    from typing import Iterable
+    
+    import psutil
+    from prometheus_client import Metric
+    from prometheus_client.metrics_core import GaugeMetricFamily
+    from prometheus_client.registry import Collector, REGISTRY
+    
+    
+    class SystemResourceCollector(Collector):
+        def collect(self) -> Iterable[Metric]:
+            resource_usage = GaugeMetricFamily('system_resource_usage', "system resource usage",
+                                               labels=["cpu", "memory"])
+            resource_usage.add_metric(["cpu"], psutil.cpu_percent())
+            resource_usage.add_metric(["memory"], psutil.virtual_memory()[2])
+            yield resource_usage
+    
+    
+    REGISTRY.register(SystemResourceCollector())
+    
+    # prometheus_practice/__init__.py
+    from system_collector import SystemResourceCollector
+    
+    # register 실행을 위한 임포팅
+    __all__ = [
+        "SystemResourceCollector"
+    ]
+    
+    
+    ```
+  
     
 
