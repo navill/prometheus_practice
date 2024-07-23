@@ -34,7 +34,10 @@
    - 새로 생성한 Metric 인스턴스는 별도로 등록하지 않아도 prometheus_client.registry.REGISTRY()에 담겨있음
      - 수집하려는 데이터는 호출 시점까지 업데이트 되어있어야함
 
+- Grafana 연동
 
+  grafana 대시보드는 오픈소스 이용(https://grafana.com/grafana/dashboards/9528-django-prometheus/)
+  ![image](https://github.com/user-attachments/assets/97b5061f-b495-43fc-af6d-b06baf699cc4)
 
 ### Trouble shooting
 

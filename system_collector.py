@@ -9,7 +9,7 @@ from prometheus_client.registry import Collector, REGISTRY
 class SystemResourceCollector(Collector):
     def collect(self) -> Iterable[Metric]:
         resource_usage = GaugeMetricFamily('system_resource_usage', "system resource usage",
-                                           labels=["type"])
+                                           labels=["resource_type"])
         resource_usage.add_metric(["cpu"], psutil.cpu_percent())
         resource_usage.add_metric(["memory"], psutil.virtual_memory()[2])
         yield resource_usage
